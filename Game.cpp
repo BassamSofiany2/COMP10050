@@ -28,38 +28,69 @@ class Token {
 	COLOR tokenColor;
 	
 	public:
-	Token(int, COLOR); 
+	void setTokenId(int);
+	int getTokenId();
+	void setTokenColor(COLOR);
+	COLOR getTokenColor();
 }; 
 
-Token::Token(int id, COLOR color) {
-	this->tokenId = id;
+void Token::setTokenId(int id) {
+	tokenId = id;
+}
+
+int Token::getTokenId() {
+	return tokenId;
+}
+
+void Token::setTokenColor(COLOR color) {
 	tokenColor = color;
+}
+
+COLOR Token::getTokenColor() {
+	return tokenColor;
 }
 
 class Player {
 	int playerId;
 	COLOR playerColor;
-	Token *tokens[4];
+	Token *tokens;
 	
 	public:
 	void setColor(COLOR);
+	COLOR getColor();
 	void setPlayerId(int);
+	int getPlayerId();
 	void setTokens();
+	Token *getTokens();
 };
 
 void Player::setColor(COLOR color) {
 	playerColor = color;
 }
 
+COLOR Player::getColor() {
+	return playerColor;
+}
+
 void Player::setPlayerId(int id) {
 	playerId = id;
 }
 
+int Player::getPlayerId() {
+	return playerId;
+}
+
 void Player::setTokens() {
 	int tokensCount = 4;
-	for (int count=0; count < tokensCount; count++) {
-		tokens[count] = new Token((playerId*100) + count ,playerColor);
+	tokens = new Token[tokensCount];
+	for (int count=0; count < tokensCount; ++count) {
+		tokens[count].setTokenId((playerId*100) + count);
+		tokens[count].setTokenColor(playerColor);
 	}
+}
+
+Token *Player::getTokens() {
+	return tokens;
 }
 
 class Dice {
@@ -78,7 +109,11 @@ class Game {
 	Game();
 	void initializeObstacles();
 	void setNumberOfPlayers(int);
+	int getNumberOfPlayers();
+	int getRowCount();
+	int getColumnCount();
 	Player *getPlayers();
+	stack<COLOR> *getBoard();
 };
 
 Game::Game() {
@@ -95,8 +130,7 @@ void Game::initializeObstacles() {
 		cout<<(randNum + 1)<<"\n"; // to be removed
 		
 		int positionOnBoard = (randNum + 1);
-		stack<COLOR> stackOnBoard = *(board + (colCount*row) + positionOnBoard); 
-		stackOnBoard.push(COLOR::BLACK);
+		board[(colCount*row) + positionOnBoard].push(COLOR::BLACK);
 	}
 }
 
@@ -105,8 +139,24 @@ void Game::setNumberOfPlayers(int numPlayers) {
 	players = new Player[numPlayers];
 }
 
+int Game::getNumberOfPlayers() {
+	return numberOfPlayers;
+}
+
+int Game::getRowCount() {
+	return rowCount;
+}
+	
+int Game::getColumnCount() {
+	return colCount;
+}
+
 Player *Game::getPlayers() {
 	return players;
+}
+
+stack<COLOR> *Game::getBoard() {
+	return board;
 }
 
 string getColorString(COLOR color) {
@@ -198,16 +248,41 @@ void initializePlayers(Game *game) {
 				Player *players = game->getPlayers();
 				COLOR color = numberColors[chosenNumberColor];
 				
-				Player p = players[player];
-				p.setColor(color);
-				p.setPlayerId(player+1);
-				p.setTokens();
+				players[player].setColor(color);
+				players[player].setPlayerId(player+1);
+				players[player].setTokens();
 				
 				remainingColors[color] = false;
 				colorSelectedByPlayer = true;
 			}
 		}
 	} 
+}
+
+void verifyGameParameters(Game *game) {
+	cout<<"game info\n";
+	cout<<game->getRowCount()<<" "<<game->getColumnCount()<<"\n";
+	
+	Player *players = game->getPlayers();
+	for (int i=0; i < 3; i++) {
+		Player p = players[i];
+		cout<<getColorString(p.getColor())<<" "<<p.getPlayerId()<<"\n";
+		
+		Token *t = p.getTokens();
+		for (int i=0; i < 4; i++) {
+			cout<<t[i].getTokenId()<<" "<<getColorString(t[i].getTokenColor())<<"\n";
+		}
+	}
+	
+	// check game board
+	stack<COLOR> *bd = game->getBoard();
+	for (int i=0; i < 54; i++) {
+		if (bd[i].empty()) {
+			//cout<<"stack empty at "<<i<<"\n";
+		} else {
+			cout<<"top "<<getColorString(bd[i].top())<<" index: "<<i<<"\n";
+		}
+	}
 }
 
 int main() {
@@ -218,7 +293,8 @@ int main() {
 	// Player Initialization
 	initializePlayers(game);
 	
-	
+	// temporary
+	verifyGameParameters(game);
 	
 	return 0;
 }
