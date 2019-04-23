@@ -3,7 +3,7 @@
 #include <ctime>
 #include <map>
 using namespace std;
- 
+
 enum COLOR {
 	RED,
 	BLUE,
@@ -13,7 +13,7 @@ enum COLOR {
 	ORANGE,
 	BLACK
 };
- 
+
 enum NUMBER {
 	ONE,
 	TWO,
@@ -22,29 +22,50 @@ enum NUMBER {
 	FIVE,
 	SIX
 };
- 
+
 class Token {
-	int countTokens;
+	int tokenId; 
 	COLOR tokenColor;
+	
+	public:
+	Token(int, COLOR); 
 }; 
- 
+
+Token::Token(int id, COLOR color) {
+	this->tokenId = id;
+	tokenColor = color;
+}
+
 class Player {
 	int playerId;
 	COLOR playerColor;
-	Token tokens[4];
- 
+	Token *tokens[4];
+	
 	public:
 	void setColor(COLOR);
+	void setPlayerId(int);
+	void setTokens();
 };
- 
+
 void Player::setColor(COLOR color) {
 	playerColor = color;
 }
- 
+
+void Player::setPlayerId(int id) {
+	playerId = id;
+}
+
+void Player::setTokens() {
+	int tokensCount = 4;
+	for (int count=0; count < tokensCount; count++) {
+		tokens[count] = new Token((playerId*100) + count ,playerColor);
+	}
+}
+
 class Dice {
 	NUMBER numberOnDice;
 };
- 
+
 class Game {
 	int rowCount;
 	int colCount;
@@ -52,42 +73,73 @@ class Game {
 	Player *players;
 	stack<COLOR> *board;
 	Dice diceOfGame;
- 
+	
 	public:
 	Game();
 	void initializeObstacles();
 	void setNumberOfPlayers(int);
 	Player *getPlayers();
 };
- 
+
 Game::Game() {
 	rowCount = 6;
 	colCount = 9;
 	board = new stack<COLOR>[rowCount*colCount];
 };
- 
+
 void Game::initializeObstacles() {
 	srand(time(NULL));
- 
+	
 	for (int row=0; row < rowCount; row++) {
 		int randNum = rand() % 8;
 		cout<<(randNum + 1)<<"\n"; // to be removed
- 
+		
 		int positionOnBoard = (randNum + 1);
 		stack<COLOR> stackOnBoard = *(board + (colCount*row) + positionOnBoard); 
 		stackOnBoard.push(COLOR::BLACK);
 	}
 }
- 
+
 void Game::setNumberOfPlayers(int numPlayers) {
 	numberOfPlayers = numPlayers;
 	players = new Player[numPlayers];
 }
- 
+
 Player *Game::getPlayers() {
 	return players;
 }
- 
+
+string getColorString(COLOR color) {
+	string colorStr;
+	switch(color) {
+		case RED: 
+			colorStr = "RED";
+			break;
+		case BLUE: 
+			colorStr = "BLUE";
+			break;
+		case GREEN:
+			colorStr = "GREEN";
+			break;
+		case YELLOW:
+			colorStr = "YELLOW";
+			break;
+		case PINK:
+			colorStr = "PINK";
+			break;
+		case ORANGE:
+			colorStr = "ORANGE";
+			break;
+		case BLACK:
+			colorStr = "BLACK";
+			break;
+		default:
+			cout<<"Wrong Color Provided\n";
+			colorStr = "BLACK";
+	}
+	return colorStr;
+}
+
 void initializePlayers(Game *game) {
 	// Input Number of Players
 	int numPlayers;
@@ -95,9 +147,9 @@ void initializePlayers(Game *game) {
 		cout<<"Enter the number of players (2-6)\n";
 		cin>>numPlayers;
 	} while (numPlayers < 2 || numPlayers > 6);
- 
+	
 	game->setNumberOfPlayers(numPlayers);
- 
+	
 	// Put all Colors in a map from which players have to pick
 	map<COLOR, bool> remainingColors;
 	remainingColors[COLOR::RED] = true;
@@ -106,7 +158,7 @@ void initializePlayers(Game *game) {
 	remainingColors[COLOR::YELLOW] = true;
 	remainingColors[COLOR::PINK] = true;
 	remainingColors[COLOR::ORANGE] = true;
- 
+	
 	// Mapping between integer value with Color
 	map<int, COLOR> numberColors;
 	numberColors.insert(pair<int, COLOR> (1, COLOR::RED));
@@ -115,54 +167,58 @@ void initializePlayers(Game *game) {
 	numberColors.insert(pair<int, COLOR> (4, COLOR::YELLOW));
 	numberColors.insert(pair<int, COLOR> (5, COLOR::PINK));
 	numberColors.insert(pair<int, COLOR> (6, COLOR::ORANGE));
- 
+	
 	// Choose Color for each player
 	for (int player=0; player < numPlayers; player++) {
- 
+		
 		int numberColor = 1;
 		int chosenNumberColor;
 		bool colorSelectedByPlayer = false;
- 
+		
 		while (!colorSelectedByPlayer) {
- 
+		
 			cout<<"Player "<<(player + 1)<<": \n";
 			cout<<"Choose your colour"<<"\n";
- 
+			
 			for (map<COLOR, bool>::iterator it = remainingColors.begin(); it != remainingColors.end(); ++it) {
 				if (it->second == true) {
-					cout<<numberColor<<" ("<<it->first<<") \n";
+					cout<<numberColor<<" ("<<getColorString(it->first)<<") \n";
 				}
 				numberColor++;
 			}
- 
+			
 			cout<<"\n";
 			cin>>chosenNumberColor;
- 
+			
 			if (chosenNumberColor < 1 || chosenNumberColor > 6) {
 				cout<<"Number Chosen is out of Choice\n";
 			} else if (remainingColors[numberColors[chosenNumberColor]] == false) {
-				cout<<"Color already taken by another player";
+				cout<<"Color already taken by another player\n";
 			} else {
 				Player *players = game->getPlayers();
 				COLOR color = numberColors[chosenNumberColor];
- 
-				(players[player]).setColor(color);
+				
+				Player p = players[player];
+				p.setColor(color);
+				p.setPlayerId(player+1);
+				p.setTokens();
+				
 				remainingColors[color] = false;
 				colorSelectedByPlayer = true;
 			}
 		}
 	} 
 }
- 
+
 int main() {
 	// Game Initialization
 	Game *game = new Game();
 	game->initializeObstacles();
- 
+	
 	// Player Initialization
 	initializePlayers(game);
- 
- 
- 
+	
+	
+	
 	return 0;
 }
