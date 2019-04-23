@@ -24,21 +24,42 @@ enum NUMBER {
 };
  
 class Token {
-	int countTokens;
+	int tokenId; 
 	COLOR tokenColor;
+ 
+	public:
+	Token(int, COLOR); 
 }; 
+ 
+Token::Token(int id, COLOR color) {
+	this->tokenId = id;
+	tokenColor = color;
+}
  
 class Player {
 	int playerId;
 	COLOR playerColor;
-	Token tokens[4];
+	Token *tokens[4];
  
 	public:
 	void setColor(COLOR);
+	void setPlayerId(int);
+	void setTokens();
 };
  
 void Player::setColor(COLOR color) {
 	playerColor = color;
+}
+ 
+void Player::setPlayerId(int id) {
+	playerId = id;
+}
+ 
+void Player::setTokens() {
+	int tokensCount = 4;
+	for (int count=0; count < tokensCount; count++) {
+		tokens[count] = new Token((playerId*100) + count ,playerColor);
+	}
 }
  
 class Dice {
@@ -88,6 +109,37 @@ Player *Game::getPlayers() {
 	return players;
 }
  
+string getColorString(COLOR color) {
+	string colorStr;
+	switch(color) {
+		case RED: 
+			colorStr = "RED";
+			break;
+		case BLUE: 
+			colorStr = "BLUE";
+			break;
+		case GREEN:
+			colorStr = "GREEN";
+			break;
+		case YELLOW:
+			colorStr = "YELLOW";
+			break;
+		case PINK:
+			colorStr = "PINK";
+			break;
+		case ORANGE:
+			colorStr = "ORANGE";
+			break;
+		case BLACK:
+			colorStr = "BLACK";
+			break;
+		default:
+			cout<<"Wrong Color Provided\n";
+			colorStr = "BLACK";
+	}
+	return colorStr;
+}
+ 
 void initializePlayers(Game *game) {
 	// Input Number of Players
 	int numPlayers;
@@ -130,7 +182,7 @@ void initializePlayers(Game *game) {
  
 			for (map<COLOR, bool>::iterator it = remainingColors.begin(); it != remainingColors.end(); ++it) {
 				if (it->second == true) {
-					cout<<numberColor<<" ("<<it->first<<") \n";
+					cout<<numberColor<<" ("<<getColorString(it->first)<<") \n";
 				}
 				numberColor++;
 			}
@@ -141,12 +193,16 @@ void initializePlayers(Game *game) {
 			if (chosenNumberColor < 1 || chosenNumberColor > 6) {
 				cout<<"Number Chosen is out of Choice\n";
 			} else if (remainingColors[numberColors[chosenNumberColor]] == false) {
-				cout<<"Color already taken by another player";
+				cout<<"Color already taken by another player\n";
 			} else {
 				Player *players = game->getPlayers();
 				COLOR color = numberColors[chosenNumberColor];
  
-				(players[player]).setColor(color);
+				Player p = players[player];
+				p.setColor(color);
+				p.setPlayerId(player+1);
+				p.setTokens();
+ 
 				remainingColors[color] = false;
 				colorSelectedByPlayer = true;
 			}
@@ -161,8 +217,6 @@ int main() {
  
 	// Player Initialization
 	initializePlayers(game);
- 
- 
  
 	return 0;
 }
