@@ -285,6 +285,84 @@ void verifyGameParameters(Game *game) {
 	}
 }
 
+bool checkIdenticalTop(stack<COLOR> *board, Player player, int colCount, int row) {
+	stack<COLOR> stackRow = board[colCount*row];
+	cout<<"hh "<<colCount*row<<" "<<getColorString(player.getColor())<<"\n";
+	
+	if (stackRow.empty())
+	return false;
+	
+	cout<<"top "<<stackRow.top()<<"\n";
+	if (stackRow.top() == player.getColor())
+	return true;
+	
+	return false;
+}
+
+bool existSmallerStack() {
+	return false;
+}
+
+void moveAllToLeftColumn(Game *game) {
+	cout<<"Starting the Game\n";
+	cout<<"We require to place all our tokens on first column of the board\n";
+	cout<<"RULE:\n";
+	cout<<"A token should be placed first on top of one of the smallest stacks.\n";
+	cout<<"A player cannot stack a token on top of his/her token.\n";
+	
+	int playersCount = game->getNumberOfPlayers();
+	int tokensCount = 4;
+	int totalMoves = playersCount * tokensCount;
+	
+	stack<COLOR> *board = game->getBoard();
+	Player *players = game->getPlayers();
+	
+	for (int move=0; move < totalMoves; ++move) {
+		bool rowSelected = false;
+		int row;
+		
+		cout<<"Player turn: "<<(move%playersCount + 1)<<"\n";
+		
+		while(!rowSelected) {
+			cout<<"Enter the row (1-6) you want to place your token\n";
+			cin>>row;
+			
+			//stack<COLOR> stackRow = board[game->getColumnCount()*(row-1)]; 
+			Player player = players[move%playersCount];
+			
+			if (row < 1 || row > 6) {
+				cout<<"Value entered is out of scope. Please try again\n";
+			} else if (checkIdenticalTop(board, player, game->getColumnCount(), row-1)) {
+				cout<<"Can not stack on your token\n ";
+			} else if (existSmallerStack()) {
+				cout<<"Place your token on smaller stack\n";
+			} else {
+				board[game->getColumnCount()*(row-1)].push(player.getColor());
+				rowSelected = true;
+			}
+		}
+	}
+}
+
+void gameStart(Game *game) {
+	moveAllToLeftColumn(game);
+}
+
+void verifyTokensLeftmostColumn(Game *game) {
+	stack<COLOR> *board = game->getBoard();
+	
+	for (int i=0; i < 6; i++) {
+		int index = i*9;
+		stack<COLOR> s = board[index];
+		
+		cout<<"index "<<index<<"\n";
+		while(!s.empty()) {
+			cout<<getColorString(s.top())<<"\n";
+			s.pop();
+		}
+	}
+}
+
 int main() {
 	// Game Initialization
 	Game *game = new Game();
@@ -294,7 +372,12 @@ int main() {
 	initializePlayers(game);
 	
 	// temporary
-	verifyGameParameters(game);
+	//verifyGameParameters(game);
+	
+	gameStart(game);
+	
+	// temporary
+	//verifyTokensLeftmostColumn(game);
 	
 	return 0;
 }
