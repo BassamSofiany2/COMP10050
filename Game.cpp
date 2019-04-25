@@ -126,7 +126,7 @@ void Game::initializeObstacles() {
 	srand(time(NULL));
 	
 	for (int row=0; row < rowCount; row++) {
-		int randNum = rand() % 8;
+		int randNum = rand() % 7;
 		//cout<<(randNum + 1)<<"\n"; 
 		
 		int positionOnBoard = (randNum + 1);
@@ -419,7 +419,124 @@ void moveUpOrDown(Game *game, int playerTurn) {
 	
 }
 
-void moveToRight(Game *game, int playerTurn, int row) {
+void moveToRightStack(Game *game, int row) {
+	stack<Token *> *board = game->getBoard();
+	
+	Token *token = board[row].top();
+	board[row+1].push(token);
+	board[(row)].pop();
+}
+
+bool matchTokenObtacleStack() {
+	
+}
+
+bool isCurrentObstacleStack(stack<Token *> *board, int index) {
+	if ((board[index].top())->getTokenColor() == COLOR::BLACK)
+	return true;
+	
+	return false;
+}
+
+bool matchTokenOnTopObtacleStack(stack<Token *> *board, int index, int playerTurn, Player *players) {
+	Token *tokenBlack = board[index].top();
+	board[index].pop();
+	if (board[index].empty()) {
+		board[index].push(tokenBlack);
+		return false;
+	} else if ((board[index].top())->getTokenColor() == players[playerTurn].getColor()) {
+		board[index].push(tokenBlack);
+		return true;
+	} else {
+		board[index].push(tokenBlack);
+		return false;
+	}
+}
+
+int getPlayerTokenIndex(int rowInput, int playerTurn, Game *game) {
+	stack<Token *> *board = game->getBoard();
+	Player *players = game->getPlayers();
+	
+	int index = -1;
+	
+	for (int col=rowInput; col < rowInput + game->getColumnCount(); ++col) {
+		if (!board[col].empty()) {
+			if (isCurrentObstacleStack(board, col)) {
+				if (matchTokenOnTopObtacleStack(board, col, playerTurn, players)) {
+					index = col;
+					return index;
+				}
+			} else {
+				if ((board[col].top())->getTokenColor() == players[playerTurn].getColor()) {
+					index = col; 
+					return index;
+				}
+			}
+		}
+	}
+	
+	return -1;
+}
+
+bool canTokenMove(stack<Token *> *board, int index, int rowCount, int colCount) {
+	for (int row = ((index-1)%colCount); row < rowCount*colCount; row=row+colCount) {
+		if (!board[row].empty()) {
+			if (isCurrentObstacleStack(board, row) && board[row].size() > 1) {
+				return false;
+			} else if (!isCurrentObstacleStack(board, row)) {
+				return false;
+			}
+		}
+	}
+	return true; 
+}
+
+bool alreadyOnLastStack(int currentIndex, int num) {
+	if (( (currentIndex+1) % num ) != 0)
+	return false; 
+	
+	return true;
+}
+
+bool isNextObstacleStack(int index, stack<Token *> *board) {
+	
+	if (board[index+1].empty())
+	return false;
+	
+	return isCurrentObstacleStack(board, index+1);
+}
+
+void moveFromObstacleStack(stack<Token *> *board, int index) {
+	Token *tokenBlack = board[index].top();
+	board[index].pop();
+	
+	Token *token = board[index].top();
+	board[index].pop();
+	
+	board[index+1].push(token);
+	board[index].push(tokenBlack);
+}
+
+void moveToObstacleStack(stack<Token *> *board, int index) {
+	Token *token = board[index].top();
+	board[index].pop();
+	
+	Token *tokenBlack = board[index+1].top();
+	board[index+1].pop();
+	
+	board[index+1].push(token);
+	board[index+1].push(tokenBlack);
+}
+
+void moveToRight(Game *game, int playerTurn, int rowInput) {
+	int row;
+	row = getPlayerTokenIndex(rowInput, playerTurn, game);
+	
+	if (row == -1) {
+		cout<<"Your token not found in this row (or top of stack)\n";
+		return;
+	}
+	
 	stack<Token *> *board = game->getBoard();
 	Player *players = game->getPlayers();
 	
@@ -428,19 +545,43 @@ void moveToRight(Game *game, int playerTurn, int row) {
 		return;
 	}
 	
-	if ((board[row].top())->getTokenColor() != players[playerTurn].getColor()) {
-		cout<<"You cannot move this step (Either your token is not present in this stack or its not on the top) \n";
-		return;
-	}
-	
 	// check if current is black stack
 	// check if next is black stack, then pop, push & push
 	// check if we reached end
 	// check winner
-	Token *token = board[row].top();
-	board[row+1].push(token);
-	board[(row)].pop();
+	if (isCurrentObstacleStack(board, row)) {
+		cout<<"yes isCurrentObstacleStack "<<row<<"\n"; // temp
+		if (!canTokenMove(board, row, game->getRowCount(), game->getColumnCount())) {
+			cout<<"Your token is currently on Obstacle Stack. So you can not move\n";
+			return;
+		} else {
+			cout<<"Your token can move from obstacle stack (since no tokens present on previous column for any row\n";
+			moveFromObstacleStack(board, row);
+		}
+	} else if (alreadyOnLastStack(row, game->getColumnCount())) {
+		cout<<"Already on last stack of the row\n";
+		return;
+	} else if (isNextObstacleStack(row, board)) {
+		moveToObstacleStack(board, row); 
+	} else {
+		moveToRightStack(game, row);
+	}
 }
+
+void verifyRowTokens(int row, stack<Token *> *board) {
+	for (int index=row*9; index < (row*9 + 9); index++) {
+		
+		stack<Token *> s = board[index];
+		
+		cout<<"index "<<index<<"\n";
+		while(!s.empty()) {
+			cout<<getColorString((s.top())->getTokenColor())<<"\n";
+			cout<<(s.top())->getTokenId()<<"\n";
+			s.pop();
+		}
+	}
+}
+
 
 void moveLeftToRight(Game *game) {
 	bool winnerDecided = false;
@@ -458,7 +599,7 @@ void moveLeftToRight(Game *game) {
 		cout<<"Player turn: "<<(playerTurn + 1)<<"\n";
 		cout<<"Rolling the dice.....\n";
 		
-		int diceNum = rand() % 6;
+		int diceNum = 4; //rand() % 6; // temp
 		cout<<"Dice number: "<<(diceNum + 1)<<"\n";
 		
 		cout<<"Do you want to move your token up or down (y or n) (Value other than y will be treated as n)\n";
@@ -472,15 +613,20 @@ void moveLeftToRight(Game *game) {
 		cout<<"We will now move to right for row "<<(diceNum + 1)<<"\n";
 		moveToRight(game, playerTurn, diceNum*(game->getColumnCount()));
 		
+		// temp
+		verifyRowTokens(4, game->getBoard());
+		
+		if (rand() % 20 == 10) // temp
 		winnerDecided = true; // temp
 		
-		playerTurn = (playerTurn%playersCount);
+		playerTurn = ((playerTurn+1)%playersCount);
 	}
 }
 
 void gameStart(Game *game) {
 	moveAllToLeftColumn(game);
 	moveLeftToRight(game);
+	//checkAnyWinner(); // temp
 }
 
 void verifyTokensLeftmostColumn(Game *game) {
@@ -535,4 +681,5 @@ int main() {
 	verifyTokensSecondColumn(game);
 	
 	return 0;
+	// Note: does not handle the case if same token is present in same row such that obstacle stack is behind.
 }
