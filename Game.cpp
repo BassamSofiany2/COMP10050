@@ -102,7 +102,7 @@ class Game {
 	int colCount;
 	int numberOfPlayers;
 	Player *players;
-	stack<COLOR> *board;
+	stack<Token *> *board;
 	Dice diceOfGame;
 	
 	public:
@@ -113,13 +113,13 @@ class Game {
 	int getRowCount();
 	int getColumnCount();
 	Player *getPlayers();
-	stack<COLOR> *getBoard();
+	stack<Token *> *getBoard();
 };
 
 Game::Game() {
 	rowCount = 6;
 	colCount = 9;
-	board = new stack<COLOR>[rowCount*colCount];
+	board = new stack<Token *>[rowCount*colCount];
 };
 
 void Game::initializeObstacles() {
@@ -130,7 +130,10 @@ void Game::initializeObstacles() {
 		cout<<(randNum + 1)<<"\n"; // to be removed
 		
 		int positionOnBoard = (randNum + 1);
-		board[(colCount*row) + positionOnBoard].push(COLOR::BLACK);
+		Token *token = new Token();
+		token->setTokenId(7*100 + row);
+		token->setTokenColor(COLOR::BLACK);
+		board[(colCount*row) + positionOnBoard].push(token); 
 	}
 }
 
@@ -155,7 +158,7 @@ Player *Game::getPlayers() {
 	return players;
 }
 
-stack<COLOR> *Game::getBoard() {
+stack<Token *> *Game::getBoard() {
 	return board;
 }
 
@@ -275,25 +278,25 @@ void verifyGameParameters(Game *game) {
 	}
 	
 	// check game board
-	stack<COLOR> *bd = game->getBoard();
+	stack<Token *> *bd = game->getBoard();
 	for (int i=0; i < 54; i++) {
 		if (bd[i].empty()) {
 			//cout<<"stack empty at "<<i<<"\n";
 		} else {
-			cout<<"top "<<getColorString(bd[i].top())<<" index: "<<i<<"\n";
+			cout<<"top "<<getColorString((bd[i].top())->getTokenColor())<<" index: "<<i<<"\n";
 		}
 	}
 }
 
-bool checkIdenticalTop(stack<COLOR> *board, Player player, int colCount, int row) {
-	stack<COLOR> stackRow = board[colCount*row];
+bool checkIdenticalTop(stack<Token *> *board, Player player, int colCount, int row) {
+	stack<Token *> stackRow = board[colCount*row];
 	cout<<"hh "<<colCount*row<<" "<<getColorString(player.getColor())<<"\n";
 	
 	if (stackRow.empty())
 	return false;
 	
 	cout<<"top "<<stackRow.top()<<"\n";
-	if (stackRow.top() == player.getColor())
+	if ((stackRow.top())->getTokenColor() == player.getColor())
 	return true;
 	
 	return false;
@@ -314,7 +317,7 @@ void moveAllToLeftColumn(Game *game) {
 	int tokensCount = 4;
 	int totalMoves = playersCount * tokensCount;
 	
-	stack<COLOR> *board = game->getBoard();
+	stack<Token *> *board = game->getBoard();
 	Player *players = game->getPlayers();
 	
 	for (int move=0; move < totalMoves; ++move) {
@@ -327,7 +330,6 @@ void moveAllToLeftColumn(Game *game) {
 			cout<<"Enter the row (1-6) you want to place your token\n";
 			cin>>row;
 			
-			//stack<COLOR> stackRow = board[game->getColumnCount()*(row-1)]; 
 			Player player = players[move%playersCount];
 			
 			if (row < 1 || row > 6) {
@@ -337,7 +339,7 @@ void moveAllToLeftColumn(Game *game) {
 			} else if (existSmallerStack()) {
 				cout<<"Place your token on smaller stack\n";
 			} else {
-				board[game->getColumnCount()*(row-1)].push(player.getColor());
+				board[game->getColumnCount()*(row-1)].push(&player.getTokens()[move/playersCount]); 
 				rowSelected = true;
 			}
 		}
@@ -349,15 +351,16 @@ void gameStart(Game *game) {
 }
 
 void verifyTokensLeftmostColumn(Game *game) {
-	stack<COLOR> *board = game->getBoard();
+	stack<Token *> *board = game->getBoard();
 	
 	for (int i=0; i < 6; i++) {
 		int index = i*9;
-		stack<COLOR> s = board[index];
+		stack<Token *> s = board[index];
 		
 		cout<<"index "<<index<<"\n";
 		while(!s.empty()) {
-			cout<<getColorString(s.top())<<"\n";
+			cout<<getColorString((s.top())->getTokenColor())<<"\n";
+			cout<<(s.top())->getTokenId()<<"\n";
 			s.pop();
 		}
 	}
