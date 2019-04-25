@@ -127,7 +127,7 @@ void Game::initializeObstacles() {
 	
 	for (int row=0; row < rowCount; row++) {
 		int randNum = rand() % 8;
-		cout<<(randNum + 1)<<"\n"; // to be removed
+		//cout<<(randNum + 1)<<"\n"; 
 		
 		int positionOnBoard = (randNum + 1);
 		Token *token = new Token();
@@ -290,12 +290,10 @@ void verifyGameParameters(Game *game) {
 
 bool checkIdenticalTop(stack<Token *> *board, Player player, int colCount, int row) {
 	stack<Token *> stackRow = board[colCount*row];
-	cout<<"hh "<<colCount*row<<" "<<getColorString(player.getColor())<<"\n";
 	
 	if (stackRow.empty())
 	return false;
 	
-	cout<<"top "<<stackRow.top()<<"\n";
 	if ((stackRow.top())->getTokenColor() == player.getColor())
 	return true;
 	
@@ -346,8 +344,109 @@ void moveAllToLeftColumn(Game *game) {
 	}
 }
 
+bool topDoesNotContainPlayerToken(Game *game, int playerTurn, int row) {
+	
+	stack<Token *> *board = game->getBoard();
+	Player *players = game->getPlayers();
+	
+	// chec for empty stack
+	
+	if( players[playerTurn].getColor() == (board[row].top())->getTokenColor() ) {
+		return false;
+	}
+	
+	return true;
+}
+
+void moveUpOrDown(Game *game, int playerTurn) {
+	int row;
+	bool selectionComplete = false;
+	
+	while(!selectionComplete) {
+		cout<<"Enter row from which you want your token to move(1-6)\n";
+		cin>>row;
+		
+		if (row < 1 || row > 6) {
+			cout<<"Out of Scope\n";
+		} else if (topDoesNotContainPlayerToken(game, playerTurn, (row-1)*game->getColumnCount())) {
+			cout<<"Your token is not present in this stack top\n";
+		} else {
+			char choice;
+			cout<<"Do you want to move up or down (u or d) (Input other than u will be considered as d)\n";
+			cin>>choice;
+			
+			stack<Token *> *board = game->getBoard();
+			int newRow;
+			
+			if (choice == 'u') {
+				
+				if (row == 1) {
+					newRow = 6;
+				} else {
+					newRow = row - 1;
+				}
+				
+				Token *token = board[(row-1)*game->getColumnCount()].top();
+				board[(newRow-1)*game->getColumnCount()].push(token);
+				board[(row-1)*game->getColumnCount()].pop();
+				
+			} else {
+				
+				if (row == 6) {
+					newRow = 1;
+				} else {
+					newRow = row + 1;
+				}
+				
+				Token *token = board[(row-1)*game->getColumnCount()].top();
+				board[(newRow-1)*game->getColumnCount()].push(token);
+				board[(row-1)*game->getColumnCount()].pop();
+			}	
+			
+			selectionComplete = true;
+		}
+	}
+	
+}
+
+void moveLeftToRight(Game *game) {
+	bool winnerDecided = false;
+	int playersCount = game->getNumberOfPlayers();
+	int playerTurn = 0;
+	char choice;
+	
+	cout<<"Now we will start moving towards right \n";
+	cout<<"RULE:\n";
+	cout<<"Roll the dice\n";
+	cout<<"Move your token up or down (Optional)\n";
+	cout<<"Move forward one of the token at the row indicated by the dice(Mandatory) \n";
+	
+	while (!winnerDecided) {
+		cout<<"Player turn: "<<(playerTurn + 1)<<"\n";
+		cout<<"Rolling the dice.....\n";
+		
+		int diceNum = rand() % 6;
+		cout<<"Dice number: "<<(diceNum + 1)<<"\n";
+		
+		cout<<"Do you want to move your token up or down (y or n) (Value other than y will be treated as n)\n";
+		cin>>choice;
+		
+		// Any other option will be treated as n.
+		if (choice == 'y') {
+			moveUpOrDown(game, playerTurn);
+		}
+		
+		// move left to right implement
+		
+		winnerDecided = true; // temp
+		
+		playerTurn = (playerTurn%playersCount);
+	}
+}
+
 void gameStart(Game *game) {
 	moveAllToLeftColumn(game);
+	moveLeftToRight(game);
 }
 
 void verifyTokensLeftmostColumn(Game *game) {
@@ -380,7 +479,7 @@ int main() {
 	gameStart(game);
 	
 	// temporary
-	//verifyTokensLeftmostColumn(game);
+	verifyTokensLeftmostColumn(game);
 	
 	return 0;
 }
