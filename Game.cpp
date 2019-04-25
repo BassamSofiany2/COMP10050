@@ -300,7 +300,15 @@ bool checkIdenticalTop(stack<Token *> *board, Player player, int colCount, int r
 	return false;
 }
 
-bool existSmallerStack() {
+bool existSmallerStack(Game *game, int row) {
+	stack<Token *> *board = game->getBoard();
+	int size = board[game->getColumnCount()*(row-1)].size();
+	
+	for (int r=0; r < game->getRowCount(); ++r) {
+		if (board[game->getColumnCount()*(r-1)].size() < size)
+		return true;
+	}
+	
 	return false;
 }
 
@@ -334,7 +342,7 @@ void moveAllToLeftColumn(Game *game) {
 				cout<<"Value entered is out of scope. Please try again\n";
 			} else if (checkIdenticalTop(board, player, game->getColumnCount(), row-1)) {
 				cout<<"Can not stack on your token\n ";
-			} else if (existSmallerStack()) {
+			} else if (existSmallerStack(game, row)) {
 				cout<<"Place your token on smaller stack\n";
 			} else {
 				board[game->getColumnCount()*(row-1)].push(&player.getTokens()[move/playersCount]); 
@@ -349,7 +357,9 @@ bool topDoesNotContainPlayerToken(Game *game, int playerTurn, int row) {
 	stack<Token *> *board = game->getBoard();
 	Player *players = game->getPlayers();
 	
-	// chec for empty stack
+	if (board[row].empty()) {
+		return true;
+	}
 	
 	if( players[playerTurn].getColor() == (board[row].top())->getTokenColor() ) {
 		return false;
