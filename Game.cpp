@@ -93,17 +93,13 @@ Token *Player::getTokens() {
 	return tokens;
 }
 
-class Dice {
-	NUMBER numberOnDice;
-};
-
 class Game {
 	int rowCount;
 	int colCount;
 	int numberOfPlayers;
 	Player *players;
 	stack<Token *> *board;
-	Dice diceOfGame;
+	NUMBER numberOnDice;
 	
 	public:
 	Game();
@@ -114,6 +110,8 @@ class Game {
 	int getColumnCount();
 	Player *getPlayers();
 	stack<Token *> *getBoard();
+	void setNumberOnDice(int);
+	int getNumberOnDice();
 };
 
 Game::Game() {
@@ -160,6 +158,58 @@ Player *Game::getPlayers() {
 
 stack<Token *> *Game::getBoard() {
 	return board;
+}
+
+void Game::setNumberOnDice(int num) {
+	switch (num) {
+		case 0:
+			numberOnDice = NUMBER::ONE;
+			break;
+		case 1:
+			numberOnDice = NUMBER::TWO;
+			break;
+		case 2:
+			numberOnDice = NUMBER::THREE;
+			break;
+		case 3:
+			numberOnDice = NUMBER::FOUR;
+			break;
+		case 4:
+			numberOnDice = NUMBER::FIVE;
+			break;
+		case 5:
+			numberOnDice = NUMBER::SIX;
+			break;
+		default:
+			numberOnDice = NUMBER::ONE;
+	}
+}
+
+int Game::getNumberOnDice() {
+	int num;
+	switch (numberOnDice) {
+		case NUMBER::ONE :
+			num = 0;
+			break;
+		case NUMBER::TWO :
+			num = 1;
+			break;
+		case NUMBER::THREE :
+			num = 2;
+			break;
+		case NUMBER::FOUR :
+			num = 3;
+			break;
+		case NUMBER::FIVE :
+			num = 4;
+			break;
+		case NUMBER::SIX :
+			num = 5;
+			break;
+		default:
+			num = 0;
+	}
+	return num;
 }
 
 string getColorString(COLOR color) {
@@ -665,7 +715,7 @@ bool checkAnyWinner(Game *game) {
 	}
 	
 	for (int player = 0; player < playerCount; ++player) {
-		int winnerTokenCount = 1; // 3 temp
+		int winnerTokenCount = 3; 
 		if (countTokenLastStack[player] >= winnerTokenCount) {
 			winner = player;
 			break;
@@ -698,6 +748,8 @@ void moveLeftToRight(Game *game) {
 		
 		int diceNum = 4; //rand() % 6; // temp
 		cout<<"Dice number: "<<(diceNum + 1)<<"\n";
+		
+		game->setNumberOnDice(diceNum);
 		
 		cout<<"Do you want to move your token up or down (y or n) (Value other than y will be treated as n)\n";
 		cin>>choice;
@@ -782,5 +834,7 @@ int main() {
 	verifyTokensSecondColumn(game);
 	
 	return 0;
-	// Note: does not handle the case if same token is present in same row such that obstacle stack is behind.
+	// Improvements: does not handle the case if same token is present in same row such that obstacle stack is behind.
+	// saving dice value in game obect but not using
+	
 }
