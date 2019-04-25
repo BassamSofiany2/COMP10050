@@ -125,7 +125,6 @@ void Game::initializeObstacles() {
 	
 	for (int row=0; row < rowCount; row++) {
 		int randNum = rand() % 7;
-		//cout<<(randNum + 1)<<"\n"; 
 		
 		int positionOnBoard = (randNum + 1);
 		Token *token = new Token();
@@ -274,12 +273,13 @@ void initializePlayers(Game *game) {
 	// Choose Color for each player
 	for (int player=0; player < numPlayers; player++) {
 		
-		int numberColor = 1;
+		int numberColor;
 		int chosenNumberColor;
 		bool colorSelectedByPlayer = false;
 		
 		while (!colorSelectedByPlayer) {
-		
+			numberColor = 1;
+			
 			cout<<"Player "<<(player + 1)<<": \n";
 			cout<<"Choose your colour"<<"\n";
 			
@@ -312,32 +312,6 @@ void initializePlayers(Game *game) {
 	} 
 }
 
-void verifyGameParameters(Game *game) {
-	cout<<"game info\n";
-	cout<<game->getRowCount()<<" "<<game->getColumnCount()<<"\n";
-	
-	Player *players = game->getPlayers();
-	for (int i=0; i < 3; i++) {
-		Player p = players[i];
-		cout<<getColorString(p.getColor())<<" "<<p.getPlayerId()<<"\n";
-		
-		Token *t = p.getTokens();
-		for (int i=0; i < 4; i++) {
-			cout<<t[i].getTokenId()<<" "<<getColorString(t[i].getTokenColor())<<"\n";
-		}
-	}
-	
-	// check game board
-	stack<Token *> *bd = game->getBoard();
-	for (int i=0; i < 54; i++) {
-		if (bd[i].empty()) {
-			//cout<<"stack empty at "<<i<<"\n";
-		} else {
-			cout<<"top "<<getColorString((bd[i].top())->getTokenColor())<<" index: "<<i<<"\n";
-		}
-	}
-}
-
 bool checkIdenticalTop(stack<Token *> *board, Player player, int colCount, int row) {
 	stack<Token *> stackRow = board[colCount*row];
 	
@@ -354,274 +328,13 @@ bool existSmallerStack(Game *game, int row) {
 	stack<Token *> *board = game->getBoard();
 	int size = board[game->getColumnCount()*(row-1)].size();
 	
+	// Checks if any other stack in the column has less number of objects as compared to current stack
 	for (int r=0; r < game->getRowCount(); ++r) {
 		if (board[game->getColumnCount()*(r-1)].size() < size)
 		return true;
 	}
 	
 	return false;
-}
-
-void moveAllToLeftColumn(Game *game) {
-	cout<<"Starting the Game\n";
-	cout<<"We require to place all our tokens on first column of the board\n";
-	cout<<"RULE:\n";
-	cout<<"A token should be placed first on top of one of the smallest stacks.\n";
-	cout<<"A player cannot stack a token on top of his/her token.\n";
-	
-	int playersCount = game->getNumberOfPlayers();
-	int tokensCount = 4;
-	int totalMoves = playersCount * tokensCount;
-	
-	stack<Token *> *board = game->getBoard();
-	Player *players = game->getPlayers();
-	
-	for (int move=0; move < totalMoves; ++move) {
-		bool rowSelected = false;
-		int row;
-		
-		cout<<"Player turn: "<<(move%playersCount + 1)<<"\n";
-		
-		while(!rowSelected) {
-			cout<<"Enter the row (1-6) you want to place your token\n";
-			cin>>row;
-			
-			Player player = players[move%playersCount];
-			
-			if (row < 1 || row > 6) {
-				cout<<"Value entered is out of scope. Please try again\n";
-			} else if (checkIdenticalTop(board, player, game->getColumnCount(), row-1)) {
-				cout<<"Can not stack on your token\n ";
-			} else if (existSmallerStack(game, row)) {
-				cout<<"Place your token on smaller stack\n";
-			} else {
-				board[game->getColumnCount()*(row-1)].push(&player.getTokens()[move/playersCount]); 
-				rowSelected = true;
-			}
-		}
-	}
-}
-
-bool topDoesNotContainPlayerToken(Game *game, int playerTurn, int row) {
-	
-	stack<Token *> *board = game->getBoard();
-	Player *players = game->getPlayers();
-	
-	if (board[row].empty()) {
-		return true;
-	}
-	
-	if( players[playerTurn].getColor() == (board[row].top())->getTokenColor() ) {
-		return false;
-	}
-	
-	return true;
-}
-
-void moveUpOrDown(Game *game, int playerTurn) {
-	int row;
-	bool selectionComplete = false;
-	
-	while(!selectionComplete) {
-		cout<<"Enter row from which you want your token to move(1-6)\n";
-		cin>>row;
-		
-		if (row < 1 || row > 6) {
-			cout<<"Out of Scope\n";
-		} else if (topDoesNotContainPlayerToken(game, playerTurn, (row-1)*game->getColumnCount())) {
-			cout<<"Your token is not present in this stack top\n";
-		} else {
-			char choice;
-			cout<<"Do you want to move up or down (u or d) (Input other than u will be considered as d)\n";
-			cin>>choice;
-			
-			stack<Token *> *board = game->getBoard();
-			int newRow;
-			
-			if (choice == 'u') {
-				
-				if (row == 1) {
-					newRow = 6;
-				} else {
-					newRow = row - 1;
-				}
-				
-				Token *token = board[(row-1)*game->getColumnCount()].top();
-				board[(newRow-1)*game->getColumnCount()].push(token);
-				board[(row-1)*game->getColumnCount()].pop();
-				
-			} else {
-				
-				if (row == 6) {
-					newRow = 1;
-				} else {
-					newRow = row + 1;
-				}
-				
-				Token *token = board[(row-1)*game->getColumnCount()].top();
-				board[(newRow-1)*game->getColumnCount()].push(token);
-				board[(row-1)*game->getColumnCount()].pop();
-			}	
-			
-			selectionComplete = true;
-		}
-	}
-	
-}
-
-void moveToRightStack(Game *game, int row) {
-	stack<Token *> *board = game->getBoard();
-	
-	Token *token = board[row].top();
-	board[row+1].push(token);
-	board[(row)].pop();
-}
-
-bool isCurrentObstacleStack(stack<Token *> *board, int index) {
-	if ((board[index].top())->getTokenColor() == COLOR::BLACK)
-	return true;
-	
-	return false;
-}
-
-bool matchTokenOnTopObtacleStack(stack<Token *> *board, int index, int playerTurn, Player *players) {
-	Token *tokenBlack = board[index].top();
-	board[index].pop();
-	if (board[index].empty()) {
-		board[index].push(tokenBlack);
-		return false;
-	} else if ((board[index].top())->getTokenColor() == players[playerTurn].getColor()) {
-		board[index].push(tokenBlack);
-		return true;
-	} else {
-		board[index].push(tokenBlack);
-		return false;
-	}
-}
-
-int getPlayerTokenIndex(int rowInput, int playerTurn, Game *game) {
-	stack<Token *> *board = game->getBoard();
-	Player *players = game->getPlayers();
-	
-	int index = -1;
-	
-	for (int col=rowInput; col < rowInput + game->getColumnCount(); ++col) {
-		if (!board[col].empty()) {
-			if (isCurrentObstacleStack(board, col)) {
-				if (matchTokenOnTopObtacleStack(board, col, playerTurn, players)) {
-					index = col;
-					return index;
-				}
-			} else {
-				if ((board[col].top())->getTokenColor() == players[playerTurn].getColor()) {
-					index = col; 
-					return index;
-				}
-			}
-		}
-	}
-	
-	return -1;
-}
-
-bool canTokenMove(stack<Token *> *board, int index, int rowCount, int colCount) {
-	for (int row = ((index-1)%colCount); row < rowCount*colCount; row=row+colCount) {
-		if (!board[row].empty()) {
-			if (isCurrentObstacleStack(board, row) && board[row].size() > 1) {
-				return false;
-			} else if (!isCurrentObstacleStack(board, row)) {
-				return false;
-			}
-		}
-	}
-	return true; 
-}
-
-bool alreadyOnLastStack(int currentIndex, int num) {
-	if (( (currentIndex+1) % num ) != 0)
-	return false; 
-	
-	return true;
-}
-
-bool isNextObstacleStack(int index, stack<Token *> *board) {
-	
-	if (board[index+1].empty())
-	return false;
-	
-	return isCurrentObstacleStack(board, index+1);
-}
-
-void moveFromObstacleStack(stack<Token *> *board, int index) {
-	Token *tokenBlack = board[index].top();
-	board[index].pop();
-	
-	Token *token = board[index].top();
-	board[index].pop();
-	
-	board[index+1].push(token);
-	board[index].push(tokenBlack);
-}
-
-void moveToObstacleStack(stack<Token *> *board, int index) {
-	Token *token = board[index].top();
-	board[index].pop();
-	
-	Token *tokenBlack = board[index+1].top();
-	board[index+1].pop();
-	
-	board[index+1].push(token);
-	board[index+1].push(tokenBlack);
-}
-
-void moveToRight(Game *game, int playerTurn, int rowInput) {
-	int row;
-	row = getPlayerTokenIndex(rowInput, playerTurn, game);
-	
-	if (row == -1) {
-		cout<<"Your token not found in this row (or top of stack)\n";
-		return;
-	}
-	
-	stack<Token *> *board = game->getBoard();
-	Player *players = game->getPlayers();
-	
-	if (board[row].empty()) {
-		cout<<"No token on this stack \n";
-		return;
-	}
-	
-	if (isCurrentObstacleStack(board, row)) {
-		
-		if (!canTokenMove(board, row, game->getRowCount(), game->getColumnCount())) {
-			cout<<"Your token is currently on Obstacle Stack. So you can not move\n";
-			return;
-		} else {
-			cout<<"Your token can move from obstacle stack (since no tokens present on previous column for any row\n";
-			moveFromObstacleStack(board, row);
-		}
-	} else if (alreadyOnLastStack(row, game->getColumnCount())) {
-		cout<<"Already on last stack of the row\n";
-		return;
-	} else if (isNextObstacleStack(row, board)) {
-		moveToObstacleStack(board, row); 
-	} else {
-		moveToRightStack(game, row);
-	}
-}
-
-void verifyRowTokens(int row, stack<Token *> *board) {
-	for (int index=row*9; index < (row*9 + 9); index++) {
-		
-		stack<Token *> s = board[index];
-		
-		cout<<"index "<<index<<"\n";
-		while(!s.empty()) {
-			cout<<getColorString((s.top())->getTokenColor())<<"\n";
-			cout<<(s.top())->getTokenId()<<"\n";
-			s.pop();
-		}
-	}
 }
 
 void drawUI(Game *game) {
@@ -681,8 +394,265 @@ void drawUI(Game *game) {
 	for (int i=0; i < 48; ++i)
 		cout<<"-";
 		
-	cout<<"Note:\n";
+	cout<<"\nNote:\n";
 	cout<<"R - RED, B - BLUE, G - GREEN, Y - YELLOW, P - PINK, O - ORANGE, K - Obstacle\n\n";
+}
+
+void moveAllToLeftColumn(Game *game) {
+	cout<<"Starting the Game.........\n\n";
+	cout<<"We require to place all our tokens on first column of the board\n";
+	cout<<"RULE:\n";
+	cout<<"A token should be placed first on top of one of the smallest stacks.\n";
+	cout<<"A player cannot stack a token on top of his/her token.\n\n\n";
+	
+	int playersCount = game->getNumberOfPlayers();
+	int tokensCount = 4;
+	int totalMoves = playersCount * tokensCount;
+	
+	stack<Token *> *board = game->getBoard();
+	Player *players = game->getPlayers();
+	
+	for (int move=0; move < totalMoves; ++move) {
+		bool rowSelected = false;
+		int row;
+		
+		cout<<"Player turn: "<<(move%playersCount + 1)<<"\n";
+		
+		while(!rowSelected) {
+			cout<<"Enter the row (1-6) you want to place your token\n";
+			cin>>row;
+			
+			Player player = players[move%playersCount];
+			
+			if (row < 1 || row > 6) {
+				cout<<"Value entered is out of scope. Please try again\n";
+			} else if (checkIdenticalTop(board, player, game->getColumnCount(), row-1)) {
+				cout<<"Can not stack on your token\n ";
+			} else if (existSmallerStack(game, row)) {
+				cout<<"Place your token on smaller stack\n";
+			} else {
+				board[game->getColumnCount()*(row-1)].push(&player.getTokens()[move/playersCount]); 
+				rowSelected = true;
+			}
+			
+			drawUI(game);
+		}
+	}
+}
+
+bool topDoesNotContainPlayerToken(Game *game, int playerTurn, int row) {
+	
+	stack<Token *> *board = game->getBoard();
+	Player *players = game->getPlayers();
+	
+	if (board[row].empty()) {
+		return true;
+	}
+	
+	if( players[playerTurn].getColor() == (board[row].top())->getTokenColor() ) {
+		return false;
+	}
+	
+	return true;
+}
+
+void moveUpOrDown(Game *game, int playerTurn) {
+	int row;
+	bool selectionComplete = false;
+	
+	while(!selectionComplete) {
+		cout<<"Enter row from which you want your token to move(1-6)\n";
+		cin>>row;
+		
+		if (row < 1 || row > 6) {
+			cout<<"Out of Scope\n";
+		} else if (topDoesNotContainPlayerToken(game, playerTurn, (row-1)*game->getColumnCount())) {
+			cout<<"Your token is not present in this stack top\n";
+		} else {
+			char choice;
+			cout<<"Do you want to move up or down (u or d) (Input other than u will be considered as d)\n";
+			cin>>choice;
+			
+			stack<Token *> *board = game->getBoard();
+			int newRow;
+			
+			if (choice == 'u') {
+				// Cyclic movement
+				if (row == 1) {
+					newRow = 6;
+				} else {
+					newRow = row - 1;
+				}
+			} else {
+				// Cyclic movement
+				if (row == 6) {
+					newRow = 1;
+				} else {
+					newRow = row + 1;
+				}
+			}	
+			
+			// Subtraction from one because index starts from zero
+			Token *token = board[(row-1)*game->getColumnCount()].top();
+			board[(newRow-1)*game->getColumnCount()].push(token);
+			board[(row-1)*game->getColumnCount()].pop();
+			
+			selectionComplete = true;
+		}
+		
+		drawUI(game);
+	}
+	
+}
+
+// Moves token from current stack to next column stack
+void moveToRightStack(Game *game, int row) {
+	stack<Token *> *board = game->getBoard();
+	
+	Token *token = board[row].top();
+	board[row+1].push(token);
+	board[(row)].pop();
+}
+
+bool isCurrentObstacleStack(stack<Token *> *board, int index) {
+	if ((board[index].top())->getTokenColor() == COLOR::BLACK)
+	return true;
+	
+	return false;
+}
+
+bool matchTokenOnTopObtacleStack(stack<Token *> *board, int index, int playerTurn, Player *players) {
+	Token *tokenBlack = board[index].top();
+	board[index].pop();
+	if (board[index].empty()) {
+		board[index].push(tokenBlack);
+		return false;
+	} else if ((board[index].top())->getTokenColor() == players[playerTurn].getColor()) {
+		board[index].push(tokenBlack);
+		return true;
+	} else {
+		board[index].push(tokenBlack);
+		return false;
+	}
+}
+
+int getPlayerTokenIndex(int rowInput, int playerTurn, Game *game) {
+	stack<Token *> *board = game->getBoard();
+	Player *players = game->getPlayers();
+	
+	int index = -1;
+	
+	for (int col=rowInput; col < rowInput + game->getColumnCount(); ++col) {
+		if (!board[col].empty()) {
+			// Check if current stack is an obstacle box
+			if (isCurrentObstacleStack(board, col)) {
+				// Checks if right token is present on top in obstacle box
+				if (matchTokenOnTopObtacleStack(board, col, playerTurn, players)) {
+					index = col;
+					return index;
+				}
+			} else {
+				// Checks that right token is present on top of normal stack
+				if ((board[col].top())->getTokenColor() == players[playerTurn].getColor()) {
+					index = col; 
+					return index;
+				}
+			}
+		}
+	}
+	
+	return -1;
+}
+
+bool canTokenMove(stack<Token *> *board, int index, int rowCount, int colCount) {
+	for (int row = ((index-1)%colCount); row < rowCount*colCount; row=row+colCount) {
+		if (!board[row].empty()) {
+			if (isCurrentObstacleStack(board, row) && board[row].size() > 1) {
+				return false;
+			} else if (!isCurrentObstacleStack(board, row)) {
+				return false;
+			}
+		}
+	}
+	return true; 
+}
+
+// Checks if token is on last column of the board
+bool alreadyOnLastStack(int currentIndex, int num) {
+	if (( (currentIndex+1) % num ) != 0)
+	return false; 
+	
+	return true;
+}
+
+// Checks if next column has obstacle box.
+bool isNextObstacleStack(int index, stack<Token *> *board) {
+	
+	if (board[index+1].empty())
+	return false;
+	
+	return isCurrentObstacleStack(board, index+1);
+}
+
+// Move token to next normal column/box from obstacle box
+void moveFromObstacleStack(stack<Token *> *board, int index) {
+	Token *tokenBlack = board[index].top();
+	board[index].pop();
+	
+	Token *token = board[index].top();
+	board[index].pop();
+	
+	board[index+1].push(token);
+	board[index].push(tokenBlack);
+}
+
+// Move token to next column which is a obstacle box
+void moveToObstacleStack(stack<Token *> *board, int index) {
+	Token *token = board[index].top();
+	board[index].pop();
+	
+	Token *tokenBlack = board[index+1].top();
+	board[index+1].pop();
+	
+	board[index+1].push(token);
+	board[index+1].push(tokenBlack);
+}
+
+void moveToRight(Game *game, int playerTurn, int rowInput) {
+	int row;
+	// Gets the location/index in given row where token is placed for current player
+	row = getPlayerTokenIndex(rowInput, playerTurn, game);
+	
+	if (row == -1) {
+		cout<<"Your token not found in this row (or top of stack)\n";
+		return;
+	}
+	
+	stack<Token *> *board = game->getBoard();
+	Player *players = game->getPlayers();
+	
+	if (board[row].empty()) {
+		cout<<"No token on this stack \n";
+		return;
+	}
+	
+	if (isCurrentObstacleStack(board, row)) {
+		// Checks if previous column has a token in any row 
+		if (!canTokenMove(board, row, game->getRowCount(), game->getColumnCount())) {
+			cout<<"Your token is currently on Obstacle Stack. So you can not move\n";
+			return;
+		} else {
+			cout<<"Your token can move from obstacle stack (since no tokens present on previous column for any row\n";
+			moveFromObstacleStack(board, row);
+		}
+	} else if (alreadyOnLastStack(row, game->getColumnCount())) {
+		cout<<"Already on last stack of the row\n";
+		return;
+	} else if (isNextObstacleStack(row, board)) {
+		moveToObstacleStack(board, row); 
+	} else {
+		moveToRightStack(game, row);
+	}
 }
 
 bool checkAnyWinner(Game *game) {
@@ -690,11 +660,13 @@ bool checkAnyWinner(Game *game) {
 	Player *players = game->getPlayers();
 	int playerCount = game->getNumberOfPlayers();
 	
+	// Map color value with player index
 	map<COLOR, int> colorToPlayerMap;
 	for(int player = 0; player < playerCount; ++player) {
 		colorToPlayerMap[players[player].getColor()] = player;
 	}
 	
+	// Initialize map with zero
 	int countTokenLastStack[playerCount];
 	for (int i=0; i < playerCount; ++i) {
 		countTokenLastStack[i] = 0;
@@ -702,6 +674,7 @@ bool checkAnyWinner(Game *game) {
 	
 	int colCount = game->getColumnCount();
 	int winner = -1;
+	// Counts total number of different tokens in last column
 	for (int row =colCount - 1; row < colCount*(game->getRowCount()); row=row+colCount) {
 		stack<Token *> stck = board[row];
 		if(!stck.empty()) {
@@ -714,6 +687,7 @@ bool checkAnyWinner(Game *game) {
 		}
 	}
 	
+	// Checks if for any player atleast 3 tokens reached on last column of the board
 	for (int player = 0; player < playerCount; ++player) {
 		int winnerTokenCount = 3; 
 		if (countTokenLastStack[player] >= winnerTokenCount) {
@@ -722,6 +696,7 @@ bool checkAnyWinner(Game *game) {
 		}
 	}
 	
+	// No winner found
 	if (winner != -1) {
 		cout<<"Player "<<winner<<" wins \n";
 		return true;
@@ -736,19 +711,21 @@ void moveLeftToRight(Game *game) {
 	int playerTurn = 0;
 	char choice;
 	
-	cout<<"Now we will start moving towards right \n";
+	cout<<"Now we will start moving towards right.... \n\n";
 	cout<<"RULE:\n";
 	cout<<"Roll the dice\n";
 	cout<<"Move your token up or down (Optional)\n";
-	cout<<"Move forward one of the token at the row indicated by the dice(Mandatory) \n";
+	cout<<"Move forward one of the token at the row indicated by the dice(Mandatory) \n\n\n";
 	
 	while (!winnerDecided) {
 		cout<<"Player turn: "<<(playerTurn + 1)<<"\n";
 		cout<<"Rolling the dice.....\n";
 		
-		int diceNum = 4; //rand() % 6; // temp
+		// Random dice value (0-5)
+		int diceNum = rand() % 6;
 		cout<<"Dice number: "<<(diceNum + 1)<<"\n";
 		
+		// Setting dice value in game object 
 		game->setNumberOnDice(diceNum);
 		
 		cout<<"Do you want to move your token up or down (y or n) (Value other than y will be treated as n)\n";
@@ -762,14 +739,13 @@ void moveLeftToRight(Game *game) {
 		cout<<"We will now move to right for row "<<(diceNum + 1)<<"\n";
 		moveToRight(game, playerTurn, diceNum*(game->getColumnCount()));
 		
-		// temp
-		//verifyRowTokens(4, game->getBoard());
-		
 		drawUI(game);
 		
+		// Checks if any winner so far
 		if (checkAnyWinner(game))
-		winnerDecided = true;
+			winnerDecided = true;
 		
+		// This is to see some finite steps in online editor  
 		if (rand() % 20 == 10) // temp
 		winnerDecided = true; // temp
 		
@@ -782,37 +758,6 @@ void gameStart(Game *game) {
 	moveLeftToRight(game);
 }
 
-void verifyTokensLeftmostColumn(Game *game) {
-	stack<Token *> *board = game->getBoard();
-	
-	for (int i=0; i < 6; i++) {
-		int index = i*9;
-		stack<Token *> s = board[index];
-		
-		cout<<"index "<<index<<"\n";
-		while(!s.empty()) {
-			cout<<getColorString((s.top())->getTokenColor())<<"\n";
-			cout<<(s.top())->getTokenId()<<"\n";
-			s.pop();
-		}
-	}
-}
-
-void verifyTokensSecondColumn(Game *game) {
-	stack<Token *> *board = game->getBoard();
-	
-	for (int i=0; i < 6; i++) {
-		int index = i*9 + 1;
-		stack<Token *> s = board[index];
-		
-		cout<<"index "<<index<<"\n";
-		while(!s.empty()) {
-			cout<<getColorString((s.top())->getTokenColor())<<"\n";
-			cout<<(s.top())->getTokenId()<<"\n";
-			s.pop();
-		}
-	}
-}
 
 int main() {
 	// Game Initialization
@@ -822,16 +767,8 @@ int main() {
 	// Player Initialization
 	initializePlayers(game);
 	
-	// temporary
-	//verifyGameParameters(game);
-	
+	// Start the game
 	gameStart(game);
-	
-	// temporary
-	//verifyTokensLeftmostColumn(game);
-	
-	//temporary
-	verifyTokensSecondColumn(game);
 	
 	return 0;
 	// Improvements: does not handle the case if same token is present in same row such that obstacle stack is behind.
