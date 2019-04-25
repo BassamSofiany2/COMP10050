@@ -419,6 +419,29 @@ void moveUpOrDown(Game *game, int playerTurn) {
 	
 }
 
+void moveToRight(Game *game, int playerTurn, int row) {
+	stack<Token *> *board = game->getBoard();
+	Player *players = game->getPlayers();
+	
+	if (board[row].empty()) {
+		cout<<"No token on this stack \n";
+		return;
+	}
+	
+	if ((board[row].top())->getTokenColor() != players[playerTurn].getColor()) {
+		cout<<"You cannot move this step (Either your token is not present in this stack or its not on the top) \n";
+		return;
+	}
+	
+	// check if current is black stack
+	// check if next is black stack, then pop, push & push
+	// check if we reached end
+	// check winner
+	Token *token = board[row].top();
+	board[row+1].push(token);
+	board[(row)].pop();
+}
+
 void moveLeftToRight(Game *game) {
 	bool winnerDecided = false;
 	int playersCount = game->getNumberOfPlayers();
@@ -446,7 +469,8 @@ void moveLeftToRight(Game *game) {
 			moveUpOrDown(game, playerTurn);
 		}
 		
-		// move left to right implement
+		cout<<"We will now move to right for row "<<(diceNum + 1)<<"\n";
+		moveToRight(game, playerTurn, diceNum*(game->getColumnCount()));
 		
 		winnerDecided = true; // temp
 		
@@ -475,6 +499,22 @@ void verifyTokensLeftmostColumn(Game *game) {
 	}
 }
 
+void verifyTokensSecondColumn(Game *game) {
+	stack<Token *> *board = game->getBoard();
+	
+	for (int i=0; i < 6; i++) {
+		int index = i*9 + 1;
+		stack<Token *> s = board[index];
+		
+		cout<<"index "<<index<<"\n";
+		while(!s.empty()) {
+			cout<<getColorString((s.top())->getTokenColor())<<"\n";
+			cout<<(s.top())->getTokenId()<<"\n";
+			s.pop();
+		}
+	}
+}
+
 int main() {
 	// Game Initialization
 	Game *game = new Game();
@@ -489,7 +529,10 @@ int main() {
 	gameStart(game);
 	
 	// temporary
-	verifyTokensLeftmostColumn(game);
+	//verifyTokensLeftmostColumn(game);
+	
+	//temporary
+	verifyTokensSecondColumn(game);
 	
 	return 0;
 }
